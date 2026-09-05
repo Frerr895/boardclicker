@@ -151,6 +151,7 @@
     font-family: var(--font-mono); font-size: 0.9rem;
   }
   .lb-row { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--panel-alt); padding-bottom: 8px; }
+  .lb-you-divider { border-top: 1px dashed var(--panel-alt); margin: 2px 0 4px; }
   .lb-rank { color: var(--text-dim); width: 22px; text-align: right; }
   .lb-name { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .lb-score { font-weight: 600; }
@@ -277,9 +278,9 @@
   .progress-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.25s linear; }
 
   .keycap-wrap { position: relative; width: 180px; height: 180px; margin-bottom: 22px; }
-  svg.ring { position: absolute; inset: 0; transform: rotate(-90deg); }
-  svg.ring circle.track { fill: none; stroke: var(--panel-alt); stroke-width: 6; }
-  svg.ring circle.progress { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; }
+  svg.ring { position: absolute; inset: 0; }
+  svg.ring rect.track { fill: none; stroke: var(--panel-alt); stroke-width: 6; }
+  svg.ring rect.progress { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; }
   .keycap {
     position: absolute; inset: 16px;
     background: var(--keycap);
@@ -368,16 +369,16 @@
     <div class="keyboard-graphic">
       <div class="row row1">
         <span class="key">Q</span><span class="key">W</span><span class="key">E</span>
-        <span class="key lit">R</span><span class="key">T</span><span class="key">Y</span>
+        <span class="key">R</span><span class="key">T</span><span class="key">Y</span>
         <span class="key">U</span><span class="key">I</span><span class="key">O</span><span class="key">P</span>
       </div>
       <div class="row row2">
         <span class="key">A</span><span class="key">S</span><span class="key">D</span>
-        <span class="key">F</span><span class="key lit">G</span><span class="key">H</span>
+        <span class="key">F</span><span class="key">G</span><span class="key">H</span>
         <span class="key">J</span><span class="key">K</span><span class="key">L</span>
       </div>
       <div class="row row3">
-        <span class="key">Z</span><span class="key">X</span><span class="key lit">C</span>
+        <span class="key">Z</span><span class="key">X</span><span class="key">C</span>
         <span class="key">V</span><span class="key">B</span><span class="key">N</span><span class="key">M</span>
       </div>
     </div>
@@ -609,8 +610,8 @@
     <div class="progress-track" id="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
     <div class="keycap-wrap">
       <svg class="ring" viewBox="0 0 180 180">
-        <circle class="track" cx="90" cy="90" r="80"></circle>
-        <circle class="progress" id="ring-progress" cx="90" cy="90" r="80"></circle>
+        <rect class="track" x="8" y="8" width="164" height="164" rx="22" ry="22"></rect>
+        <rect class="progress" id="ring-progress" x="8" y="8" width="164" height="164" rx="22" ry="22"></rect>
       </svg>
       <div class="keycap" id="keycap-letter">A</div>
       <div class="toast" id="game-toast"></div>
@@ -1311,15 +1312,30 @@ async function loadLeaderboardTab(mode) {
     const entries = await window.fetchLeaderboard(mode, 10);
     if (!entries.length) {
       listEl.innerHTML = '<p class="hud-detail">No scores yet \u2014 be the first!</p>';
-      return;
+    } else {
+      listEl.innerHTML = '';
+      entries.forEach((entry, i) => {
+        const row = document.createElement('div');
+        row.className = 'lb-row';
+        row.innerHTML = `<span class="lb-rank">${i + 1}</span><span class="lb-name">${escapeHtml(entry.name || 'Anonymous')}</span><span class="lb-score">${entry.value}</span>`;
+        listEl.appendChild(row);
+      });
     }
-    listEl.innerHTML = '';
-    entries.forEach((entry, i) => {
-      const row = document.createElement('div');
-      row.className = 'lb-row';
-      row.innerHTML = `<span class="lb-rank">${i + 1}</span><span class="lb-name">${escapeHtml(entry.name || 'Anonymous')}</span><span class="lb-score">${entry.value}</span>`;
-      listEl.appendChild(row);
-    });
+
+    // If the signed-in player already has a score for this mode but isn't
+    // in the top 10 shown above, look up and show just their own rank.
+    if (currentUser && !entries.some((entry) => entry.uid === currentUser.uid)) {
+      const mine = await window.fetchPlayerRank(mode, currentUser.uid);
+      if (mine) {
+        const divider = document.createElement('div');
+        divider.className = 'lb-you-divider';
+        listEl.appendChild(divider);
+        const row = document.createElement('div');
+        row.className = 'lb-row';
+        row.innerHTML = `<span class="lb-rank">${mine.rank}</span><span class="lb-name">${escapeHtml(mine.name)} (you)</span><span class="lb-score">${mine.value}</span>`;
+        listEl.appendChild(row);
+      }
+    }
   } catch (err) {
     console.error('Leaderboard fetch failed:', err);
     listEl.innerHTML = '<p class="hud-detail">Couldn\u2019t load the leaderboard right now.</p>';
@@ -1490,9 +1506,10 @@ const hudStreak = document.getElementById('hud-streak');
 const hudPace = document.getElementById('hud-pace');
 const gameToast = document.getElementById('game-toast');
 
-const RING_R = 80;
-const RING_CIRC = 2 * Math.PI * RING_R;
-ringEl.style.strokeDasharray = `${RING_CIRC}`;
+const RING_SIZE = 164;
+const RING_RADIUS = 22;
+const RING_PERIM = 2 * (RING_SIZE - 2 * RING_RADIUS) + 2 * (RING_SIZE - 2 * RING_RADIUS) + 2 * Math.PI * RING_RADIUS;
+ringEl.style.strokeDasharray = `${RING_PERIM}`;
 
 function flashToast(text) {
   gameToast.textContent = text;
@@ -1508,7 +1525,7 @@ function onLetter(char) {
 
 function onTick(remaining, total) {
   const ratio = total > 0 ? remaining / total : 0;
-  ringEl.style.strokeDashoffset = `${RING_CIRC * (1 - ratio)}`;
+  ringEl.style.strokeDashoffset = `${RING_PERIM * (1 - ratio)}`;
   ringEl.style.stroke = ratio < 0.25 ? 'var(--danger)' : 'var(--accent)';
 }
 
@@ -1740,12 +1757,20 @@ function startGame() {
    don't reliably fire meaningful keydown events for letter keys).
    Both paths funnel through forwardKey(), which also drops an
    accidental duplicate on the rare device that has both a touchscreen
-   and a physical keyboard attached at once. */
+   and a physical keyboard attached at once.
+
+   pressedKeys tracks which physical keys are currently held down. If a
+   second, different key goes down while another is still held, both
+   are ignored: without this, holding or mashing multiple keys at once
+   would let whichever one happens to be correct register as a hit,
+   without the player needing to react to anything. Releasing back down
+   to one key (or none) is required before the next press counts. */
 const mobileKeyInput = document.getElementById('mobile-key-input');
 const isCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
 
 let _lastForwardedKey = '';
 let _lastForwardedAt = 0;
+const pressedKeys = new Set();
 
 function forwardKey(key) {
   if (!currentSession) return;
@@ -1760,8 +1785,20 @@ function forwardKey(key) {
 
 document.addEventListener('keydown', (e) => {
   if (e.key.length !== 1) return;
-  forwardKey(e.key.toLowerCase());
+  const key = e.key.toLowerCase();
+  pressedKeys.add(key);
+  if (pressedKeys.size > 1) return; // another key is already held \u2014 ignore this chorded press
+  forwardKey(key);
 });
+
+document.addEventListener('keyup', (e) => {
+  if (e.key.length !== 1) return;
+  pressedKeys.delete(e.key.toLowerCase());
+});
+
+// Held keys can otherwise get "stuck" in the set if the tab loses focus
+// mid-press (alt-tabbing, switching windows) and the keyup never fires.
+window.addEventListener('blur', () => pressedKeys.clear());
 
 mobileKeyInput.addEventListener('input', () => {
   const typed = mobileKeyInput.value;
@@ -1814,8 +1851,8 @@ document.getElementById('screen-game').addEventListener('click', focusMobileInpu
   if (isConfigured) {
     import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js').then(async ({ initializeApp }) => {
       const {
-        getFirestore, collection, addDoc, doc, getDoc, setDoc,
-        query, where, orderBy, limit, getDocs, serverTimestamp,
+        getFirestore, collection, addDoc, doc, getDoc, setDoc, runTransaction,
+        query, where, orderBy, limit, getDocs, getCountFromServer, serverTimestamp,
       } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
       const {
         getAuth, onAuthStateChanged, signInWithEmailAndPassword,
@@ -1826,15 +1863,24 @@ document.getElementById('screen-game').addEventListener('click', focusMobileInpu
       const db = getFirestore(app);
       const auth = getAuth(app);
 
+      // One document per player per mode (id: "<uid>_<mode>"), only ever
+      // overwritten when the new value is better. This is what makes the
+      // leaderboard naturally show just each player's best score instead
+      // of every run they've ever submitted.
       window.submitLeaderboardScore = async (mode, value) => {
         const user = auth.currentUser;
         if (!user) throw new Error('Not signed in.');
-        await addDoc(collection(db, 'leaderboard'), {
-          mode,
-          uid: user.uid,
-          name: user.displayName || 'Player',
-          value,
-          createdAt: serverTimestamp(),
+        const ref = doc(db, 'leaderboard', `${user.uid}_${mode}`);
+        await runTransaction(db, async (tx) => {
+          const existing = await tx.get(ref);
+          if (existing.exists() && existing.data().value >= value) return; // not a new best, leave it
+          tx.set(ref, {
+            mode,
+            uid: user.uid,
+            name: user.displayName || 'Player',
+            value,
+            createdAt: serverTimestamp(),
+          });
         });
       };
 
@@ -1847,6 +1893,24 @@ document.getElementById('screen-game').addEventListener('click', focusMobileInpu
         );
         const snap = await getDocs(q);
         return snap.docs.map((d) => d.data());
+      };
+
+      // Used when the signed-in player isn't in the visible top 10: looks
+      // up their own best for this mode, then counts how many players
+      // beat it to work out their rank without downloading the whole
+      // leaderboard.
+      window.fetchPlayerRank = async (mode, uid) => {
+        const ref = doc(db, 'leaderboard', `${uid}_${mode}`);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) return null;
+        const data = snap.data();
+        const higherQuery = query(
+          collection(db, 'leaderboard'),
+          where('mode', '==', mode),
+          where('value', '>', data.value)
+        );
+        const countSnap = await getCountFromServer(higherQuery);
+        return { rank: countSnap.data().count + 1, name: data.name, value: data.value };
       };
 
       // ---- Auth ----
@@ -1897,6 +1961,7 @@ document.getElementById('screen-game').addEventListener('click', focusMobileInpu
       throw new Error('Leaderboard not configured yet.');
     };
     window.fetchLeaderboard = async () => [];
+    window.fetchPlayerRank = async () => null;
     window.authSignUp = async () => { throw new Error('Accounts aren\u2019t configured yet.'); };
     window.authSignIn = async () => { throw new Error('Accounts aren\u2019t configured yet.'); };
     window.authSignOut = async () => {};
