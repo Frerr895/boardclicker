@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>BoardClicker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1b1d22;
+    --panel: #24272e;
+    --panel-alt: #2e323b;
+    --keycap: #edeae3;
+    --keycap-text: #2a2d33;
+    --keycap-shadow: #b9b3a4;
+    --text: #edeae3;
+    --text-dim: #9aa0ac;
+    --accent: #ffb020;
+    --accent-text: #ffb020;
+    --accent-dim: #7a5a17;
+    --danger: #e5484d;
+    --success: #33c481;
+    --panel-hover: #3a3f4a;
+    --radius-key: 10px;
+    --radius-btn: 14px;
+    --font-display: 'Unbounded', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-body: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+  button { font: inherit; }
+
+  #app { position: relative; }
+
+  .screen {
+    display: none;
+    position: relative;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+    text-align: center;
+  }
+  .screen.active { display: flex; }
+
+  h1, h2 { margin: 0; }
+
+  .cover-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2.4rem, 9vw, 4.6rem);
+    letter-spacing: -0.01em;
+    margin-bottom: 10px;
+  }
+  .cover-subtitle {
+    color: var(--text-dim);
+    margin: 0 0 32px;
+    max-width: 380px;
+  }
+
+  .keyboard-graphic { margin-bottom: 40px; }
+  .keyboard-graphic .row { display: flex; justify-content: center; gap: 6px; margin-bottom: 6px; }
+  .keyboard-graphic .row.row2 { margin-left: 18px; }
+  .keyboard-graphic .row.row3 { margin-left: 36px; }
+  .key {
+    width: 34px; height: 34px;
+    background: var(--keycap);
+    color: var(--keycap-text);
+    border-radius: var(--radius-key);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.75rem;
+    box-shadow: 0 3px 0 var(--keycap-shadow);
+  }
+  .key.lit {
+    background: var(--accent);
+    color: #231a05;
+    box-shadow: 0 3px 0 var(--accent-dim), 0 0 14px rgba(255, 176, 32, 0.55);
+  }
+
+  .menu-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .btn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 14px 24px;
+    border-radius: var(--radius-btn);
+    border: none;
+    cursor: pointer;
+    background: var(--panel-alt);
+    color: var(--text);
+    transition: transform 0.12s ease, background 0.12s ease;
+  }
+  .btn:hover { background: var(--panel-hover); }
+  .btn:active { transform: translateY(2px); }
+  .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .btn-primary { background: var(--accent); color: #231a05; }
+  .btn-primary:hover { background: #ffc04d; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    text-decoration: underline;
+    padding: 8px 4px;
+  }
+  .btn-ghost:hover { color: var(--text); background: transparent; }
+
+  .btn-diff {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 3px;
+    padding: 14px 20px;
+  }
+  .diff-name { font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
+  .diff-detail { font-family: var(--font-body); font-size: 0.8rem; font-weight: 400; color: var(--text-dim); }
+  .btn-primary.btn-diff .diff-name { color: #231a05; }
+  .btn-primary.btn-diff .diff-detail { color: #5a4013; }
+
+  .subtitle { color: var(--text-dim); margin: 6px 0 28px; max-width: 420px; }
+
+  .is-hidden { display: none !important; }
+
+  .lb-tabs { flex-direction: row; justify-content: center; max-width: 420px; margin-bottom: 20px; gap: 8px; }
+  .lb-tab { flex: 1; padding: 10px 10px; font-size: 0.82rem; }
+  .lb-tab.active { background: var(--accent); color: #231a05; }
+  .lb-list {
+    width: 100%; max-width: 360px;
+    display: flex; flex-direction: column; gap: 8px;
+    margin-bottom: 28px; min-height: 100px;
+    font-family: var(--font-mono); font-size: 0.9rem;
+  }
+  .lb-row { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--panel-alt); padding-bottom: 8px; }
+  .lb-rank { color: var(--text-dim); width: 22px; text-align: right; }
+  .lb-name { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lb-score { font-weight: 600; }
+
+  .lb-submit {
+    display: none;
+    flex-direction: column; align-items: center; gap: 10px;
+    width: 100%; max-width: 300px; margin: -6px 0 24px;
+  }
+  .lb-input {
+    font: inherit; font-family: var(--font-body);
+    padding: 10px 14px; border-radius: 10px;
+    border: 1px solid var(--panel-alt);
+    background: var(--panel); color: var(--text);
+    width: 100%; text-align: center;
+  }
+  .lb-input:focus-visible { outline: 2px solid var(--accent); }
+
+  .result-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 320px;
+    margin: 18px 0 30px;
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+  }
+  .result-stats .row {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--panel-alt);
+    padding-bottom: 8px;
+  }
+
+  .quit-btn {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    background: transparent;
+    border: 1px solid var(--panel-alt);
+    color: var(--text-dim);
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .quit-btn:hover { color: var(--text); border-color: var(--text-dim); }
+
+  .game-hud { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 8px; }
+  .hud-label { font-size: 0.78rem; color: var(--text-dim); }
+  .hud-value { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 600; }
+  .hud-detail { color: var(--text-dim); font-family: var(--font-mono); font-size: 0.82rem; max-width: 480px; margin: 0 0 22px; min-height: 1.2em; }
+
+  .hud-substats { display: flex; gap: 32px; margin: 4px 0 10px; }
+  .hud-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .hud-stat-label { font-size: 0.72rem; color: var(--text-dim); }
+  .hud-stat-value { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 600; }
+
+  .progress-track {
+    width: 100%; max-width: 420px; height: 6px;
+    background: var(--panel-alt); border-radius: 4px; overflow: hidden;
+    margin-bottom: 34px;
+  }
+  .progress-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.25s linear; }
+
+  .keycap-wrap { position: relative; width: 180px; height: 180px; margin-bottom: 22px; }
+  svg.ring { position: absolute; inset: 0; transform: rotate(-90deg); }
+  svg.ring circle.track { fill: none; stroke: var(--panel-alt); stroke-width: 6; }
+  svg.ring circle.progress { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; }
+  .keycap {
+    position: absolute; inset: 16px;
+    background: var(--keycap);
+    color: var(--keycap-text);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-weight: 700;
+    font-size: 3.4rem;
+    text-transform: uppercase;
+    box-shadow: 0 6px 0 var(--keycap-shadow);
+    transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.08s ease, color 0.08s ease;
+  }
+  .keycap.press { transform: translateY(6px); box-shadow: 0 1px 0 var(--keycap-shadow); }
+  .keycap.correct { background: var(--success); color: #062a1a; }
+  .keycap.wrong { background: var(--danger); color: #2a0505; animation: shake 0.3s; }
+
+  @keyframes shake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-8px); }
+    40%, 60% { transform: translateX(8px); }
+  }
+
+  .toast {
+    position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+    font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent-text);
+    opacity: 0; transition: opacity 0.3s; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  .countdown-number {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(6rem, 32vw, 13rem);
+    color: var(--accent);
+    line-height: 1;
+  }
+  .countdown-number.pulse { animation: countdownPulse 1s cubic-bezier(.2,.8,.2,1); }
+  @keyframes countdownPulse {
+    0% { transform: scale(0.4); opacity: 0; }
+    35% { transform: scale(1.08); opacity: 1; }
+    60% { transform: scale(1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @media (max-width: 480px) {
+    .key { width: 24px; height: 24px; font-size: 0.62rem; }
+    .keyboard-graphic .row.row2 { margin-left: 12px; }
+    .keyboard-graphic .row.row3 { margin-left: 24px; }
+    .keycap-wrap { width: 150px; height: 150px; }
+    .keycap { font-size: 2.6rem; inset: 12px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .keycap, .toast, .progress-fill, .btn, .countdown-number { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <section class="screen active" id="screen-cover">
+    <h1 class="cover-title">BoardClicker</h1>
+    <p class="cover-subtitle">Letter-typing game</p>
+    <div class="keyboard-graphic">
+      <div class="row row1">
+        <span class="key">Q</span><span class="key">W</span><span class="key">E</span>
+        <span class="key lit">R</span><span class="key">T</span><span class="key">Y</span>
+        <span class="key">U</span><span class="key">I</span><span class="key">O</span><span class="key">P</span>
+      </div>
+      <div class="row row2">
+        <span class="key">A</span><span class="key">S</span><span class="key">D</span>
+        <span class="key">F</span><span class="key lit">G</span><span class="key">H</span>
+        <span class="key">J</span><span class="key">K</span><span class="key">L</span>
+      </div>
+      <div class="row row3">
+        <span class="key">Z</span><span class="key">X</span><span class="key lit">C</span>
+        <span class="key">V</span><span class="key">B</span><span class="key">N</span><span class="key">M</span>
+      </div>
+    </div>
+    <div class="menu-stack">
+      <button class="btn btn-primary" id="btn-go-singleplayer">Singleplayer</button>
+      <!-- Multiplayer is built and wired below (#screen-multiplayer) but hidden
+           from the menu until it's actually implemented. Remove is-hidden to
+           bring the button back. -->
+      <button class="btn is-hidden" id="btn-go-multiplayer">Multiplayer</button>
+      <button class="btn" id="btn-go-leaderboard">Leaderboard</button>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-single-menu">
+    <h2>Singleplayer</h2>
+    <p class="subtitle">Choose how you want to play.</p>
+    <div class="menu-stack">
+      <button class="btn btn-primary" id="btn-mode-timed">Timed Challenge</button>
+      <button class="btn btn-primary" id="btn-mode-survival">Survival</button>
+      <button class="btn btn-primary" id="btn-mode-speedrun">Speed Test</button>
+      <button class="btn btn-ghost" id="btn-single-back">Back</button>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-difficulty">
+    <h2>Choose a difficulty</h2>
+    <p class="subtitle">This changes which letters appear and how fast.</p>
+    <div class="menu-stack">
+      <button class="btn btn-diff" data-difficulty="easy">
+        <span class="diff-name">Easy</span>
+        <span class="diff-detail">2 seconds per letter, top keyboard row</span>
+      </button>
+      <button class="btn btn-diff" data-difficulty="medium">
+        <span class="diff-name">Medium</span>
+        <span class="diff-detail">1.5 seconds per letter, top two rows</span>
+      </button>
+      <button class="btn btn-diff" data-difficulty="hard">
+        <span class="diff-name">Hard</span>
+        <span class="diff-detail">1 second per letter, full alphabet</span>
+      </button>
+      <button class="btn btn-diff" data-difficulty="insane">
+        <span class="diff-name">Insane</span>
+        <span class="diff-detail">0.8 seconds per letter, alphabet and numbers</span>
+      </button>
+      <button class="btn btn-ghost" id="btn-difficulty-back">Back</button>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-duration">
+    <h2>How long?</h2>
+    <p class="subtitle">Pick how many minutes you want to endure.</p>
+    <div class="menu-stack">
+      <button class="btn" data-duration="1">1 minute</button>
+      <button class="btn" data-duration="2">2 minutes</button>
+      <button class="btn" data-duration="3">3 minutes</button>
+      <button class="btn" data-duration="4">4 minutes</button>
+      <button class="btn" data-duration="5">5 minutes</button>
+      <button class="btn btn-ghost" id="btn-duration-back">Back</button>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-rules">
+    <h2>Choose your rules</h2>
+    <p class="subtitle">Both track the same challenge, just with different stakes.</p>
+    <div class="menu-stack">
+      <button class="btn btn-diff btn-primary" data-rules="normal">
+        <span class="diff-name">Normal</span>
+        <span class="diff-detail">Checkpoints save your progress</span>
+      </button>
+      <button class="btn btn-diff" data-rules="hardcore">
+        <span class="diff-name">Hardcore</span>
+        <span class="diff-detail">One mistake sends you back to zero</span>
+      </button>
+      <button class="btn btn-ghost" id="btn-rules-back">Back</button>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-checkpoint">
+    <h2>Checkpoint frequency</h2>
+    <p class="subtitle">How often should Normal mode save your progress?</p>
+    <div class="menu-stack">
+      <button class="btn btn-diff" data-checkpoint="15000">
+        <span class="diff-name">Every 15 seconds</span>
+        <span class="diff-detail">A tighter safety net, closer to Hardcore</span>
+      </button>
+      <button class="btn btn-diff btn-primary" data-checkpoint="30000">
+        <span class="diff-name">Every 30 seconds</span>
+        <span class="diff-detail">The standard balance</span>
+      </button>
+      <button class="btn btn-diff" data-checkpoint="60000">
+        <span class="diff-name">Every 60 seconds</span>
+        <span class="diff-detail">Generous — more forgiving runs</span>
+      </button>
+      <button class="btn btn-ghost" id="btn-checkpoint-back">Back</button>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-speedrun-length">
+    <h2>How many letters?</h2>
+    <p class="subtitle">Wrong keys don't cost you — this is just about pace.</p>
+    <div class="menu-stack">
+      <button class="btn" data-speedrun-length="25">25 letters</button>
+      <button class="btn" data-speedrun-length="50">50 letters</button>
+      <button class="btn" data-speedrun-length="100">100 letters</button>
+      <button class="btn btn-ghost" id="btn-speedrun-length-back">Back</button>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-ready">
+    <h2>Ready?</h2>
+    <div class="result-stats" id="ready-summary"></div>
+    <div class="menu-stack">
+      <button class="btn btn-primary" id="btn-start-game">Start</button>
+      <button class="btn btn-ghost" id="btn-ready-back">Back</button>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-multiplayer">
+    <h2>Multiplayer</h2>
+    <p class="subtitle">Racing against other players is on its way. For now, sharpen your reflexes in Singleplayer.</p>
+    <div class="menu-stack">
+      <button class="btn btn-primary" id="btn-multiplayer-back">Back to menu</button>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-leaderboard">
+    <h2>Leaderboard</h2>
+    <p class="subtitle">Top scores from every player.</p>
+    <div class="menu-stack lb-tabs">
+      <button class="btn lb-tab active" data-lb-mode="timed">Timed</button>
+      <button class="btn lb-tab" data-lb-mode="survival">Survival</button>
+      <button class="btn lb-tab" data-lb-mode="speedrun">Speed Test</button>
+    </div>
+    <div class="lb-list" id="lb-list"></div>
+    <div class="menu-stack">
+      <button class="btn btn-ghost" id="btn-leaderboard-back">Back</button>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-countdown">
+    <div class="countdown-number" id="countdown-number">3</div>
+  </section>
+
+  <section class="screen" id="screen-game">
+    <button class="quit-btn" id="btn-quit">Quit</button>
+    <div class="game-hud">
+      <span class="hud-label" id="hud-timer-label">Time left</span>
+      <span class="hud-value" id="hud-timer">0:00</span>
+    </div>
+    <div class="hud-substats" id="hud-substats">
+      <div class="hud-stat">
+        <span class="hud-stat-label">Streak</span>
+        <span class="hud-stat-value" id="hud-streak">0</span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-stat-label">Pace</span>
+        <span class="hud-stat-value" id="hud-pace">&ndash;</span>
+      </div>
+    </div>
+    <p class="hud-detail" id="hud-detail"></p>
+    <div class="progress-track" id="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="keycap-wrap">
+      <svg class="ring" viewBox="0 0 180 180">
+        <circle class="track" cx="90" cy="90" r="80"></circle>
+        <circle class="progress" id="ring-progress" cx="90" cy="90" r="80"></circle>
+      </svg>
+      <div class="keycap" id="keycap-letter">A</div>
+      <div class="toast" id="game-toast"></div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-result">
+    <h2 id="result-title">Run over</h2>
+    <div class="result-stats" id="result-stats"></div>
+    <div class="lb-submit" id="lb-submit">
+      <input type="text" id="lb-name-input" class="lb-input" placeholder="Your name" maxlength="20">
+      <button class="btn btn-primary" id="btn-submit-score">Submit to leaderboard</button>
+      <p class="hud-detail" id="lb-submit-status"></p>
+    </div>
+    <div class="menu-stack">
+      <button class="btn btn-primary" id="btn-play-again">Play again</button>
+      <button class="btn btn-ghost" id="btn-result-menu">Main menu</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   Central place for difficulty and survival tuning. The future
+   multiplayer mode should reuse these same definitions instead
+   of duplicating letter sets or timings.
+   ============================================================ */
+const DIFFICULTIES = {
+  easy:   { id: 'easy',   label: 'Easy',   interval: 2000, chars: 'qwertyuiop' },
+  medium: { id: 'medium', label: 'Medium', interval: 1500, chars: 'qwertyuiopasdfghjkl' },
+  hard:   { id: 'hard',   label: 'Hard',   interval: 1000, chars: 'qwertyuiopasdfghjklzxcvbnm' },
+  insane: { id: 'insane', label: 'Insane', interval: 800,  chars: 'qwertyuiopasdfghjklzxcvbnm1234567890' },
+};
+
+const SURVIVAL_CONFIG = {
+  chars: 'qwertyuiopasdfghjklzxcvbnm',
+  startInterval: 1800,
+  minInterval: 500,
+  stepDownMs: 50,
+  stepEveryLetters: 4,
+};
+
+/* Speed Test: no per-letter clock at all — a letter waits for the
+   correct key, wrong keys are just ignored (not a fail), and we time
+   how fast the player gets through a fixed batch of letters. This is
+   the raw material for the personal-best / ranked leaderboard we'll
+   design later; the payload in onGameOver already carries everything
+   a leaderboard entry would need. */
+const SPEEDRUN_CONFIG = {
+  chars: 'qwertyuiopasdfghjklzxcvbnm',
+  maxRoundMs: 60000, // generous safety net, not meant to ever be hit
+};
+const SPEEDRUN_PACE_WINDOW = 5; // how many recent letters the live pace is based on
+
+const DEFAULT_CHECKPOINT_MS = 30000;
+
+function randomChar(chars, exclude) {
+  if (chars.length === 1) return chars[0];
+  let c;
+  do { c = chars[Math.floor(Math.random() * chars.length)]; } while (c === exclude);
+  return c;
+}
+
+/* ============================================================
+   SCORING
+   Score reflects the choices a player makes, not how many times
+   they had to retry: a Timed Challenge's score is derived purely
+   from its duration, difficulty and rules once it's completed, so
+   the same setup always awards the same score regardless of how
+   many checkpoints were used along the way.
+
+   Difficulty multipliers come from combining how much faster the
+   pace is (2000ms baseline / this difficulty's interval) with how
+   much bigger the letter pool is (this difficulty's char count /
+   Easy's 10 chars), via their geometric mean — Insane works out to
+   a clean 3x, a good sanity check that the method holds together.
+
+   Rules multipliers reward how much progress a single mistake can
+   cost: Hardcore risks the entire run, so it sits well above any
+   checkpoint interval. Within Normal rules, a LONGER checkpoint
+   interval means a BIGGER potential loss on one mistake, so it
+   scores higher than a short one — 30s is the reference point.
+
+   Survival has no difficulty to choose, but the pace still speeds
+   up during the run, so instead of one multiplier for the whole
+   run, each letter is weighted individually by how fast the pace
+   was when it was typed (2000ms baseline / that letter's interval)
+   — a letter typed near the 0.5s floor is worth about 4x one typed
+   at the start.
+
+   Speed Test isn't folded into this points system at all: it's a
+   race against the clock, not an endurance challenge, so it's
+   better served by its own time/pace leaderboard later on.
+   ============================================================ */
+const SCORE_BASE_INTERVAL = 2000; // Easy's interval — the reference pace for all scoring
+
+const DIFFICULTY_SCORE_MULTIPLIER = {
+  easy: 1.0,
+  medium: 1.6,
+  hard: 2.3,
+  insane: 3.0,
+};
+
+function rulesScoreMultiplier(hardcore, checkpointMs) {
+  if (hardcore) return 2.0;
+  return 1 + (checkpointMs / 1000 - 30) / 100;
+}
+
+/* ============================================================
+   GAME ENGINE (mode-agnostic)
+   MetronomeRound only knows "a letter appears, a window of time
+   is given to press it, then it resolves". It has no idea about
+   difficulty, duration, checkpoints, or scoring, and it never
+   touches the DOM. TimedChallengeSession and SurvivalSession
+   below layer those rules on top of it.
+
+   This split is deliberate: a future multiplayer mode can reuse
+   MetronomeRound as-is (or a self-paced variant of it) and only
+   needs to write a new "session" class, plus a networking layer
+   that mirrors session state to other players. Nothing in the
+   engine or in the DOM wiring below needs to change for that.
+   ============================================================ */
+class MetronomeRound {
+  constructor({
+    getChars, getIntervalMs, onLetter, onResult, onTick,
+    holdCorrectUntilTimeout = false, onHoldHit,
+    ignoreWrongKeys = false, onMistake,
+    manualAdvance = false,
+  }) {
+    this.getChars = getChars;
+    this.getIntervalMs = getIntervalMs;
+    this.onLetter = onLetter;
+    this.onResult = onResult;
+    this.onTick = onTick;
+    this.gapMs = 120; // brief pause after each round so feedback is visible
+
+    // Easy/Medium/Hard/Insane: a correct press is locked in and shown
+    // (green) immediately, but the round doesn't actually resolve and
+    // move on until the full interval has elapsed — the pace is a fixed
+    // metronome, not "as fast as you can dismiss it". A wrong key still
+    // fails the round immediately. This is also what keeps the pace
+    // reproducible for a future multiplayer round.
+    this.holdCorrectUntilTimeout = holdCorrectUntilTimeout;
+    this.onHoldHit = onHoldHit || (() => {});
+
+    // Speed mode: wrong keys are just ignored (not a fail) so the player
+    // can keep trying the same letter; only a correct key resolves.
+    this.ignoreWrongKeys = ignoreWrongKeys;
+    this.onMistake = onMistake || (() => {});
+
+    // When true, the engine will NOT auto-schedule the next letter after
+    // resolving a round — the caller must call advance() when it's ready
+    // (used by Timed Challenge to insert a longer pause on failure).
+    this.manualAdvance = manualAdvance;
+
+    this.active = false;
+    this.currentChar = null;
+    this.correctCount = 0;
+    this.awaitingResult = false;
+    this._hit = false;
+
+    this._timeoutId = null;
+    this._gapTimeoutId = null;
+    this._rafId = null;
+    this._roundStart = 0;
+    this._roundLength = 0;
+  }
+
+  start() {
+    this.active = true;
+    this.correctCount = 0;
+    this._nextLetter();
+  }
+
+  stop() {
+    this.active = false;
+    this.awaitingResult = false;
+    clearTimeout(this._timeoutId);
+    clearTimeout(this._gapTimeoutId);
+    cancelAnimationFrame(this._rafId);
+  }
+
+  handleKey(key) {
+    if (!this.active || !this.awaitingResult) return;
+
+    if (this.holdCorrectUntilTimeout) {
+      if (key === this.currentChar) {
+        if (this._hit) return; // already locked in, ignore further presses
+        this._hit = true;
+        this.onHoldHit();
+      } else {
+        this._resolve(false, key);
+      }
+      return;
+    }
+
+    if (this.ignoreWrongKeys) {
+      if (key === this.currentChar) {
+        this._resolve(true, key);
+      } else {
+        this.onMistake(key);
+      }
+      return;
+    }
+
+    this._resolve(key === this.currentChar, key);
+  }
+
+  // Only meaningful when manualAdvance is true: moves on to the next
+  // letter whenever the caller is ready (immediately, or after its own
+  // pause/countdown).
+  advance() {
+    if (!this.active) return;
+    clearTimeout(this._gapTimeoutId);
+    this._nextLetter();
+  }
+
+  _nextLetter() {
+    if (!this.active) return;
+    this.currentChar = randomChar(this.getChars(), this.currentChar);
+    this.awaitingResult = true;
+    this._hit = false;
+    this._roundLength = this.getIntervalMs(this.correctCount);
+    this._roundStart = performance.now();
+    this.onLetter(this.currentChar);
+    this._timeoutId = setTimeout(() => this._resolve(this._hit, null), this._roundLength);
+    this._tickLoop();
+  }
+
+  _tickLoop() {
+    if (!this.active || !this.awaitingResult) return;
+    const elapsed = performance.now() - this._roundStart;
+    const remaining = Math.max(0, this._roundLength - elapsed);
+    this.onTick(remaining, this._roundLength);
+    this._rafId = requestAnimationFrame(() => this._tickLoop());
+  }
+
+  _resolve(ok, pressedKey) {
+    if (!this.awaitingResult) return;
+    this.awaitingResult = false;
+    clearTimeout(this._timeoutId);
+    cancelAnimationFrame(this._rafId);
+    if (ok) this.correctCount++;
+    this.onResult({ ok, char: this.currentChar, pressedKey, correctCount: this.correctCount });
+    if (this.active && !this.manualAdvance) {
+      this._gapTimeoutId = setTimeout(() => this._nextLetter(), this.gapMs);
+    }
+  }
+}
+
+/* Timed Challenge: fixed difficulty pace, survive the chosen duration.
+   Normal rules keep a checkpoint at a configurable interval; Hardcore
+   resets to zero. Letters are held for the difficulty's full interval
+   regardless of when the player presses (a correct press just locks in
+   green early) — this keeps the pace a fixed, reproducible metronome
+   instead of something that speeds up the instant you're accurate,
+   which matters once this session type is mirrored across players in
+   multiplayer. A wrong key fails the round immediately; the UI wiring
+   is expected to run its own pause (e.g. a countdown) and then call
+   resumeAfterFail(). */
+class TimedChallengeSession {
+  constructor({ difficulty, durationMinutes, hardcore, checkpointIntervalMs, callbacks }) {
+    this.difficulty = difficulty;
+    this.targetMs = durationMinutes * 60000;
+    this.hardcore = hardcore;
+    this.checkpointIntervalMs = checkpointIntervalMs || DEFAULT_CHECKPOINT_MS;
+    this.callbacks = callbacks;
+
+    this.elapsedMs = 0;
+    this.checkpointMs = 0;
+    this.failCount = 0;
+    this.finished = false;
+    this._advanceTimeoutId = null;
+
+    this.engine = new MetronomeRound({
+      getChars: () => this.difficulty.chars,
+      getIntervalMs: () => this.difficulty.interval,
+      onLetter: (char) => this.callbacks.onLetter(char),
+      onTick: (remaining, total) => this.callbacks.onTick(remaining, total),
+      onResult: (result) => this._handleResult(result),
+      holdCorrectUntilTimeout: true,
+      onHoldHit: () => this.callbacks.onHit(),
+      manualAdvance: true,
+    });
+  }
+
+  start() {
+    this.callbacks.onProgress(this.elapsedMs, this.targetMs);
+    this.engine.start();
+  }
+
+  handleKey(key) { this.engine.handleKey(key); }
+
+  stop() {
+    clearTimeout(this._advanceTimeoutId);
+    this.engine.stop();
+  }
+
+  // Called by the UI once its post-fail pause (countdown) has finished.
+  resumeAfterFail() {
+    if (this.finished) return;
+    this.engine.advance();
+  }
+
+  _handleResult({ ok }) {
+    if (this.finished) return;
+
+    if (ok) {
+      this.elapsedMs += this.difficulty.interval;
+
+      const newCheckpoint = Math.floor(this.elapsedMs / this.checkpointIntervalMs) * this.checkpointIntervalMs;
+      if (!this.hardcore && newCheckpoint > this.checkpointMs) {
+        this.checkpointMs = newCheckpoint;
+        this.callbacks.onCheckpoint(this.checkpointMs);
+      }
+
+      if (this.elapsedMs >= this.targetMs) {
+        this.finished = true;
+        this.engine.stop();
+        this.callbacks.onWin({ failCount: this.failCount });
+        return;
+      }
+
+      this.callbacks.onProgress(this.elapsedMs, this.targetMs);
+      this._advanceTimeoutId = setTimeout(() => this.engine.advance(), this.engine.gapMs);
+    } else {
+      this.failCount++;
+      this.elapsedMs = this.hardcore ? 0 : this.checkpointMs;
+      this.callbacks.onProgress(this.elapsedMs, this.targetMs);
+      // Advancing is left to resumeAfterFail(): the UI shows the red
+      // letter, then its countdown, then calls it once ready.
+      this.callbacks.onFail({ elapsedMs: this.elapsedMs, failCount: this.failCount });
+    }
+  }
+}
+
+/* Survival: starts with the full alphabet at a gentle pace, and
+   speeds up every few correct letters until it hits the 0.5s floor,
+   where it stays forever. Ends on the first mistake. */
+class SurvivalSession {
+  constructor({ callbacks }) {
+    this.callbacks = callbacks;
+    this.correctCount = 0;
+    this.score = 0;
+    this.startTime = 0;
+    this.finished = false;
+    this._lastRoundInterval = SURVIVAL_CONFIG.startInterval;
+
+    this.engine = new MetronomeRound({
+      getChars: () => SURVIVAL_CONFIG.chars,
+      getIntervalMs: (correctCount) => {
+        // Recorded so a successful round can be scored by the pace it
+        // was actually typed at, not the pace of the round that follows.
+        this._lastRoundInterval = this._intervalFor(correctCount);
+        return this._lastRoundInterval;
+      },
+      onLetter: (char) => this.callbacks.onLetter(char),
+      onTick: (remaining, total) => this.callbacks.onTick(remaining, total),
+      onResult: (result) => this._handleResult(result),
+    });
+  }
+
+  _intervalFor(correctCount) {
+    const steps = Math.floor(correctCount / SURVIVAL_CONFIG.stepEveryLetters);
+    return Math.max(SURVIVAL_CONFIG.minInterval, SURVIVAL_CONFIG.startInterval - steps * SURVIVAL_CONFIG.stepDownMs);
+  }
+
+  start() {
+    this.startTime = performance.now();
+    this.engine.start();
+  }
+
+  handleKey(key) { this.engine.handleKey(key); }
+  stop() { this.engine.stop(); }
+
+  _handleResult({ ok, correctCount }) {
+    if (this.finished) return;
+
+    if (ok) {
+      this.score += SCORE_BASE_INTERVAL / this._lastRoundInterval;
+      this.callbacks.onHit();
+      this.correctCount = correctCount;
+      this.callbacks.onProgress(this.correctCount, this._intervalFor(this.correctCount));
+    } else {
+      this.finished = true;
+      this.engine.stop();
+      const timeSurvivedMs = performance.now() - this.startTime;
+      this.callbacks.onGameOver({
+        correctCount: this.correctCount,
+        timeSurvivedMs,
+        score: Math.round(this.score),
+      });
+    }
+  }
+}
+
+/* Speed Test: a fixed batch of letters, no fail state, pure pace.
+   Tracks a live no-miss streak and a rolling recent-pace estimate (based
+   on the last few letters, not the whole run) so the HUD can show
+   whether the player is speeding up or slowing down mid-run, not just
+   the final average. */
+class SpeedrunSession {
+  constructor({ totalLetters, callbacks }) {
+    this.totalLetters = totalLetters;
+    this.callbacks = callbacks;
+    this.correctCount = 0;
+    this.mistakes = 0;
+    this.streak = 0;
+    this.bestStreak = 0;
+    this.startTime = 0;
+    this._lastLetterTime = 0;
+    this.reactionTimes = [];
+    this.finished = false;
+
+    this.engine = new MetronomeRound({
+      getChars: () => SPEEDRUN_CONFIG.chars,
+      getIntervalMs: () => SPEEDRUN_CONFIG.maxRoundMs,
+      onLetter: (char) => {
+        this._lastLetterTime = performance.now();
+        this.callbacks.onLetter(char);
+      },
+      onTick: (remaining, total) => this.callbacks.onTick(remaining, total),
+      onResult: (result) => this._handleResult(result),
+      ignoreWrongKeys: true,
+      onMistake: () => {
+        this.mistakes++;
+        this.streak = 0;
+        this.callbacks.onMistake();
+        this.callbacks.onProgress(this.correctCount, this.totalLetters, this.streak, this._currentPace());
+      },
+    });
+  }
+
+  start() {
+    this.startTime = performance.now();
+    this.engine.start();
+  }
+
+  handleKey(key) { this.engine.handleKey(key); }
+  stop() { this.engine.stop(); }
+
+  _currentPace() {
+    if (this.reactionTimes.length === 0) return null;
+    const windowSize = Math.min(SPEEDRUN_PACE_WINDOW, this.reactionTimes.length);
+    const recent = this.reactionTimes.slice(-windowSize);
+    const avgMs = recent.reduce((a, b) => a + b, 0) / recent.length;
+    return Math.round(60000 / avgMs);
+  }
+
+  _handleResult({ ok, correctCount }) {
+    if (this.finished || !ok) return; // ignoreWrongKeys means a false result only happens via the safety timeout
+
+    const reactionMs = performance.now() - this._lastLetterTime;
+    this.reactionTimes.push(reactionMs);
+    this.correctCount = correctCount;
+    this.streak++;
+    if (this.streak > this.bestStreak) this.bestStreak = this.streak;
+    this.callbacks.onHit();
+    this.callbacks.onProgress(this.correctCount, this.totalLetters, this.streak, this._currentPace());
+
+    if (this.correctCount >= this.totalLetters) {
+      this.finished = true;
+      this.engine.stop();
+      const totalMs = performance.now() - this.startTime;
+      const avgReactionMs = Math.round(
+        this.reactionTimes.reduce((a, b) => a + b, 0) / this.reactionTimes.length
+      );
+      const lettersPerMinute = Math.round((this.correctCount / (totalMs / 1000)) * 60);
+      this.callbacks.onGameOver({
+        correctCount: this.correctCount,
+        totalMs,
+        avgReactionMs,
+        lettersPerMinute,
+        mistakes: this.mistakes,
+        bestStreak: this.bestStreak,
+      });
+    }
+  }
+}
+
+/* ============================================================
+   UI WIRING
+   ============================================================ */
+const screens = document.querySelectorAll('.screen');
+function showScreen(id) {
+  screens.forEach((s) => s.classList.toggle('active', s.id === id));
+}
+
+const selection = {
+  mode: null, difficulty: null, duration: null, hardcore: false,
+  checkpointMs: DEFAULT_CHECKPOINT_MS, speedrunLength: 50,
+};
+let currentSession = null;
+let bestSurvivalCount = 0;
+let bestSpeedrunLpm = 0;
+let readyBackTarget = 'screen-cover';
+let playerName = '';
+let pendingSubmission = null; // { mode, value } set by showResult, read by the submit button
+
+function formatTime(ms) {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+/* ---- Persistent storage (Survival personal best) ----
+   Uses the artifact key-value storage API so the record survives
+   between sessions inside Claude.ai (localStorage isn't reliable in
+   that context). If the API isn't available — e.g. this file is
+   opened outside Claude.ai — this quietly falls back to an in-memory
+   best that only lasts for the current session. */
+async function loadSurvivalBest() {
+  if (!window.storage) return;
+  try {
+    const result = await window.storage.get('survivalBest', false);
+    if (result && result.value) {
+      const parsed = parseInt(result.value, 10);
+      if (!Number.isNaN(parsed)) bestSurvivalCount = parsed;
+    }
+  } catch (err) {
+    // No record saved yet — start from 0.
+  }
+}
+async function saveSurvivalBest(value) {
+  if (!window.storage) return;
+  try {
+    await window.storage.set('survivalBest', String(value), false);
+  } catch (err) {
+    // Best effort only; the in-memory value still holds either way.
+  }
+}
+loadSurvivalBest();
+
+async function loadPlayerName() {
+  if (!window.storage) return;
+  try {
+    const result = await window.storage.get('playerName', false);
+    if (result && result.value) playerName = result.value;
+  } catch (err) {
+    // No name saved yet.
+  }
+}
+async function savePlayerName(name) {
+  if (!window.storage) return;
+  try {
+    await window.storage.set('playerName', name, false);
+  } catch (err) {
+    // Best effort only.
+  }
+}
+loadPlayerName();
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ---- Cover ---- */
+document.getElementById('btn-go-singleplayer').addEventListener('click', () => showScreen('screen-single-menu'));
+document.getElementById('btn-go-multiplayer').addEventListener('click', () => showScreen('screen-multiplayer'));
+document.getElementById('btn-multiplayer-back').addEventListener('click', () => showScreen('screen-cover'));
+
+/* ---- Leaderboard ---- */
+document.getElementById('btn-go-leaderboard').addEventListener('click', () => {
+  showScreen('screen-leaderboard');
+  loadLeaderboardTab('timed');
+});
+document.getElementById('btn-leaderboard-back').addEventListener('click', () => showScreen('screen-cover'));
+document.querySelectorAll('.lb-tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.lb-tab').forEach((t) => t.classList.remove('active'));
+    tab.classList.add('active');
+    loadLeaderboardTab(tab.dataset.lbMode);
+  });
+});
+
+async function loadLeaderboardTab(mode) {
+  const listEl = document.getElementById('lb-list');
+  listEl.innerHTML = '<p class="hud-detail">Loading\u2026</p>';
+
+  if (!window.isLeaderboardConfigured || !window.isLeaderboardConfigured()) {
+    listEl.innerHTML = '<p class="hud-detail">The leaderboard isn\u2019t connected yet.</p>';
+    return;
+  }
+  try {
+    const entries = await window.fetchLeaderboard(mode, 10);
+    if (!entries.length) {
+      listEl.innerHTML = '<p class="hud-detail">No scores yet \u2014 be the first!</p>';
+      return;
+    }
+    listEl.innerHTML = '';
+    entries.forEach((entry, i) => {
+      const row = document.createElement('div');
+      row.className = 'lb-row';
+      row.innerHTML = `<span class="lb-rank">${i + 1}</span><span class="lb-name">${escapeHtml(entry.name || 'Anonymous')}</span><span class="lb-score">${entry.value}</span>`;
+      listEl.appendChild(row);
+    });
+  } catch (err) {
+    console.error('Leaderboard fetch failed:', err);
+    listEl.innerHTML = '<p class="hud-detail">Couldn\u2019t load the leaderboard right now.</p>';
+  }
+}
+
+/* ---- Singleplayer menu ---- */
+document.getElementById('btn-mode-timed').addEventListener('click', () => {
+  selection.mode = 'timed';
+  showScreen('screen-difficulty');
+});
+document.getElementById('btn-mode-survival').addEventListener('click', () => {
+  selection.mode = 'survival';
+  readyBackTarget = 'screen-single-menu';
+  fillReadySummary();
+  showScreen('screen-ready');
+});
+document.getElementById('btn-mode-speedrun').addEventListener('click', () => {
+  selection.mode = 'speedrun';
+  showScreen('screen-speedrun-length');
+});
+document.getElementById('btn-single-back').addEventListener('click', () => showScreen('screen-cover'));
+
+/* ---- Difficulty ---- */
+document.querySelectorAll('#screen-difficulty [data-difficulty]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    selection.difficulty = DIFFICULTIES[btn.dataset.difficulty];
+    showScreen('screen-duration');
+  });
+});
+document.getElementById('btn-difficulty-back').addEventListener('click', () => showScreen('screen-single-menu'));
+
+/* ---- Duration ---- */
+document.querySelectorAll('#screen-duration [data-duration]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    selection.duration = parseInt(btn.dataset.duration, 10);
+    showScreen('screen-rules');
+  });
+});
+document.getElementById('btn-duration-back').addEventListener('click', () => showScreen('screen-difficulty'));
+
+/* ---- Rules ---- */
+document.querySelectorAll('#screen-rules [data-rules]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    selection.hardcore = btn.dataset.rules === 'hardcore';
+    if (selection.hardcore) {
+      readyBackTarget = 'screen-rules';
+      fillReadySummary();
+      showScreen('screen-ready');
+    } else {
+      showScreen('screen-checkpoint');
+    }
+  });
+});
+document.getElementById('btn-rules-back').addEventListener('click', () => showScreen('screen-duration'));
+
+/* ---- Checkpoint frequency (Normal rules only) ---- */
+document.querySelectorAll('#screen-checkpoint [data-checkpoint]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    selection.checkpointMs = parseInt(btn.dataset.checkpoint, 10);
+    readyBackTarget = 'screen-checkpoint';
+    fillReadySummary();
+    showScreen('screen-ready');
+  });
+});
+document.getElementById('btn-checkpoint-back').addEventListener('click', () => showScreen('screen-rules'));
+
+/* ---- Speed Test length ---- */
+document.querySelectorAll('#screen-speedrun-length [data-speedrun-length]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    selection.speedrunLength = parseInt(btn.dataset.speedrunLength, 10);
+    readyBackTarget = 'screen-speedrun-length';
+    fillReadySummary();
+    showScreen('screen-ready');
+  });
+});
+document.getElementById('btn-speedrun-length-back').addEventListener('click', () => showScreen('screen-single-menu'));
+
+/* ---- Ready ---- */
+document.getElementById('btn-ready-back').addEventListener('click', () => showScreen(readyBackTarget));
+document.getElementById('btn-start-game').addEventListener('click', () => runCountdown(startGame));
+
+function fillReadySummary() {
+  const el = document.getElementById('ready-summary');
+  el.innerHTML = '';
+  const rows = [];
+  if (selection.mode === 'timed') {
+    rows.push(['Mode', 'Timed Challenge']);
+    rows.push(['Difficulty', selection.difficulty.label]);
+    rows.push(['Duration', selection.duration + (selection.duration === 1 ? ' minute' : ' minutes')]);
+    rows.push(['Rules', selection.hardcore ? 'Hardcore' : `Normal, checkpoint every ${selection.checkpointMs / 1000}s`]);
+  } else if (selection.mode === 'survival') {
+    rows.push(['Mode', 'Survival']);
+    rows.push(['Letters', 'Full alphabet']);
+    rows.push(['Pace', 'Starts easy, speeds up over time']);
+    rows.push(['Personal best', bestSurvivalCount > 0 ? `${bestSurvivalCount} letters` : 'None yet']);
+  } else {
+    rows.push(['Mode', 'Speed Test']);
+    rows.push(['Letters', `${selection.speedrunLength}, full alphabet`]);
+    rows.push(['Goal', 'Type them as fast as you can — wrong keys don\u2019t cost you']);
+  }
+  rows.forEach(([label, value]) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<span>${label}</span><span>${value}</span>`;
+    el.appendChild(row);
+  });
+}
+
+/* ---- Quit / play again / main menu ---- */
+document.getElementById('btn-quit').addEventListener('click', () => {
+  if (currentSession) currentSession.stop();
+  currentSession = null;
+  showScreen('screen-cover');
+});
+document.getElementById('btn-play-again').addEventListener('click', () => runCountdown(startGame));
+document.getElementById('btn-result-menu').addEventListener('click', () => showScreen('screen-cover'));
+
+/* ---- Countdown ---- */
+const countdownNumberEl = document.getElementById('countdown-number');
+let countdownTimeoutIds = [];
+
+function runCountdown(onComplete) {
+  clearCountdownTimers();
+  showScreen('screen-countdown');
+  const steps = [3, 2, 1];
+  steps.forEach((value, i) => {
+    const id = setTimeout(() => showCountdownValue(value), i * 1000);
+    countdownTimeoutIds.push(id);
+  });
+  showCountdownValue(3);
+  const finishId = setTimeout(() => {
+    clearCountdownTimers();
+    onComplete();
+  }, steps.length * 1000);
+  countdownTimeoutIds.push(finishId);
+}
+
+function showCountdownValue(value) {
+  countdownNumberEl.textContent = String(value);
+  countdownNumberEl.classList.remove('pulse');
+  void countdownNumberEl.offsetWidth; // force reflow so the animation replays
+  countdownNumberEl.classList.add('pulse');
+}
+
+function clearCountdownTimers() {
+  countdownTimeoutIds.forEach(clearTimeout);
+  countdownTimeoutIds = [];
+}
+
+/* ---- Game screen elements ---- */
+const keycapEl = document.getElementById('keycap-letter');
+const ringEl = document.getElementById('ring-progress');
+const progressTrack = document.getElementById('progress-track');
+const progressFill = document.getElementById('progress-fill');
+const hudTimerLabel = document.getElementById('hud-timer-label');
+const hudTimer = document.getElementById('hud-timer');
+const hudDetail = document.getElementById('hud-detail');
+const hudSubstats = document.getElementById('hud-substats');
+const hudStreak = document.getElementById('hud-streak');
+const hudPace = document.getElementById('hud-pace');
+const gameToast = document.getElementById('game-toast');
+
+const RING_R = 80;
+const RING_CIRC = 2 * Math.PI * RING_R;
+ringEl.style.strokeDasharray = `${RING_CIRC}`;
+
+function flashToast(text) {
+  gameToast.textContent = text;
+  gameToast.classList.add('show');
+  clearTimeout(flashToast._t);
+  flashToast._t = setTimeout(() => gameToast.classList.remove('show'), 900);
+}
+
+function onLetter(char) {
+  keycapEl.textContent = char.toUpperCase();
+  keycapEl.classList.remove('press', 'correct', 'wrong');
+}
+
+function onTick(remaining, total) {
+  const ratio = total > 0 ? remaining / total : 0;
+  ringEl.style.strokeDashoffset = `${RING_CIRC * (1 - ratio)}`;
+  ringEl.style.stroke = ratio < 0.25 ? 'var(--danger)' : 'var(--accent)';
+}
+
+function flashResult(ok) {
+  keycapEl.classList.remove('correct', 'wrong');
+  void keycapEl.offsetWidth; // force reflow so repeated feedback replays the animation/color
+  keycapEl.classList.add('press', ok ? 'correct' : 'wrong');
+}
+
+function updateTimedProgress(elapsedMs, totalMs) {
+  progressFill.style.width = `${Math.min(100, (elapsedMs / totalMs) * 100)}%`;
+  hudTimer.textContent = formatTime(totalMs - elapsedMs);
+  hudDetail.textContent = `${selection.difficulty.label} difficulty, ${
+    selection.hardcore
+      ? 'hardcore rules: any mistake sends you back to zero.'
+      : `normal rules: a checkpoint is saved every ${selection.checkpointMs / 1000} seconds.`
+  }`;
+}
+
+function updateSurvivalProgress(correctCount, currentIntervalMs) {
+  hudTimer.textContent = String(correctCount);
+  const atMax = currentIntervalMs <= SURVIVAL_CONFIG.minInterval;
+  hudDetail.textContent = atMax
+    ? 'Letters now appear every 0.5 seconds. This is as fast as it gets.'
+    : `Letters now appear every ${currentIntervalMs}ms.`;
+}
+
+function updateSpeedrunProgress(correctCount, totalLetters, streak, pace) {
+  progressFill.style.width = `${Math.min(100, (correctCount / totalLetters) * 100)}%`;
+  hudTimer.textContent = `${correctCount}/${totalLetters}`;
+  hudStreak.textContent = String(streak);
+  hudPace.textContent = pace ? `${pace}/min` : '\u2013';
+}
+
+function showResult({ title, stats, submission }) {
+  document.getElementById('result-title').textContent = title;
+  const container = document.getElementById('result-stats');
+  container.innerHTML = '';
+  stats.forEach(([label, value]) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<span>${label}</span><span>${value}</span>`;
+    container.appendChild(row);
+  });
+
+  pendingSubmission = submission || null;
+  const lbSubmit = document.getElementById('lb-submit');
+  const lbStatus = document.getElementById('lb-submit-status');
+  const submitBtn = document.getElementById('btn-submit-score');
+  lbStatus.textContent = '';
+  submitBtn.disabled = false;
+
+  if (pendingSubmission) {
+    lbSubmit.style.display = 'flex';
+    document.getElementById('lb-name-input').value = playerName || '';
+    if (!window.isLeaderboardConfigured || !window.isLeaderboardConfigured()) {
+      lbStatus.textContent = 'The leaderboard isn\u2019t connected yet.';
+      submitBtn.disabled = true;
+    }
+  } else {
+    lbSubmit.style.display = 'none';
+  }
+
+  showScreen('screen-result');
+}
+
+document.getElementById('btn-submit-score').addEventListener('click', async () => {
+  if (!pendingSubmission) return;
+  const nameInput = document.getElementById('lb-name-input');
+  const name = nameInput.value.trim().slice(0, 20) || 'Anonymous';
+  playerName = name;
+  savePlayerName(name);
+
+  const btn = document.getElementById('btn-submit-score');
+  const status = document.getElementById('lb-submit-status');
+  btn.disabled = true;
+  status.textContent = 'Submitting\u2026';
+  try {
+    await window.submitLeaderboardScore(pendingSubmission.mode, name, pendingSubmission.value);
+    status.textContent = 'Submitted!';
+  } catch (err) {
+    console.error('Leaderboard submit failed:', err);
+    status.textContent = 'Couldn\u2019t submit \u2014 try again later.';
+    btn.disabled = false;
+  }
+});
+
+function formatSeconds(ms) {
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function startGame() {
+  showScreen('screen-game');
+  keycapEl.classList.remove('press', 'correct', 'wrong');
+  gameToast.classList.remove('show');
+  progressFill.style.width = '0%';
+  hudSubstats.style.display = 'none';
+
+  if (selection.mode === 'timed') {
+    progressTrack.style.display = '';
+    hudTimerLabel.textContent = 'Time left';
+
+    currentSession = new TimedChallengeSession({
+      difficulty: selection.difficulty,
+      durationMinutes: selection.duration,
+      hardcore: selection.hardcore,
+      checkpointIntervalMs: selection.checkpointMs,
+      callbacks: {
+        onLetter,
+        onTick,
+        onHit: () => flashResult(true),
+        onProgress: updateTimedProgress,
+        onCheckpoint: (checkpointMs) => flashToast(`Checkpoint saved at ${formatTime(checkpointMs)}`),
+        onFail: ({ elapsedMs }) => {
+          flashResult(false);
+          flashToast(selection.hardcore ? 'Back to the start.' : `Back to ${formatTime(elapsedMs)}.`);
+          // Let the red flash land, then pause with a countdown before
+          // resuming from the checkpoint (or zero, in Hardcore).
+          setTimeout(() => {
+            runCountdown(() => {
+              showScreen('screen-game');
+              currentSession.resumeAfterFail();
+            });
+          }, 400);
+        },
+        onWin: ({ failCount }) => {
+          const baseLetters = Math.round((selection.duration * 60000) / selection.difficulty.interval);
+          const diffMult = DIFFICULTY_SCORE_MULTIPLIER[selection.difficulty.id];
+          const rulesMult = rulesScoreMultiplier(selection.hardcore, selection.checkpointMs);
+          const score = Math.round(baseLetters * diffMult * rulesMult);
+          showResult({
+            title: 'Challenge complete!',
+            stats: [
+              ['Difficulty', selection.difficulty.label],
+              ['Duration', `${selection.duration} min`],
+              ['Rules', selection.hardcore ? 'Hardcore' : `Normal, ${selection.checkpointMs / 1000}s checkpoints`],
+              ['Mistakes', String(failCount)],
+              ['Score', String(score)],
+            ],
+            submission: { mode: 'timed', value: score },
+          });
+        },
+      },
+    });
+  } else if (selection.mode === 'survival') {
+    progressTrack.style.display = 'none';
+    hudTimerLabel.textContent = 'Letters typed';
+
+    currentSession = new SurvivalSession({
+      callbacks: {
+        onLetter,
+        onTick,
+        onHit: () => flashResult(true),
+        onProgress: updateSurvivalProgress,
+        onGameOver: ({ correctCount, timeSurvivedMs, score }) => {
+          const isNewBest = correctCount > bestSurvivalCount;
+          if (isNewBest) {
+            bestSurvivalCount = correctCount;
+            saveSurvivalBest(bestSurvivalCount);
+          }
+          showResult({
+            title: 'Run over',
+            stats: [
+              ['Letters typed', String(correctCount)],
+              ['Time survived', formatTime(timeSurvivedMs)],
+              ['Score', String(score)],
+              ['Personal best', `${bestSurvivalCount} letters${isNewBest ? ' (new!)' : ''}`],
+            ],
+            submission: { mode: 'survival', value: score },
+          });
+        },
+      },
+    });
+  } else {
+    progressTrack.style.display = '';
+    hudTimerLabel.textContent = 'Progress';
+    hudSubstats.style.display = 'flex';
+    hudStreak.textContent = '0';
+    hudPace.textContent = '\u2013';
+
+    currentSession = new SpeedrunSession({
+      totalLetters: selection.speedrunLength,
+      callbacks: {
+        onLetter,
+        onTick,
+        onHit: () => flashResult(true),
+        onMistake: () => flashResult(false),
+        onProgress: updateSpeedrunProgress,
+        onGameOver: ({ totalMs, avgReactionMs, lettersPerMinute, mistakes, bestStreak }) => {
+          if (lettersPerMinute > bestSpeedrunLpm) bestSpeedrunLpm = lettersPerMinute;
+          showResult({
+            title: 'Speed test complete!',
+            stats: [
+              ['Total time', formatSeconds(totalMs)],
+              ['Avg. reaction', `${avgReactionMs}ms`],
+              ['Letters per minute', String(lettersPerMinute)],
+              ['Best streak', String(bestStreak)],
+              ['Mistakes', String(mistakes)],
+              ['Best this session', `${bestSpeedrunLpm} lpm`],
+            ],
+            submission: { mode: 'speedrun', value: lettersPerMinute },
+          });
+        },
+      },
+    });
+  }
+
+  currentSession.start();
+}
+
+/* ---- Keyboard input ---- */
+document.addEventListener('keydown', (e) => {
+  const activeScreen = document.querySelector('.screen.active');
+  if (!activeScreen || activeScreen.id !== 'screen-game' || !currentSession) return;
+  if (e.key.length !== 1) return;
+  currentSession.handleKey(e.key.toLowerCase());
+});
+</script>
+
+<script type="module">
+  // ====== FIREBASE CONFIG ======
+  // Paste your own Firebase project's web app config here (Firebase console
+  // → Project settings → General → Your apps → the </> web app → SDK setup
+  // and configuration). These values are meant to be public in a web app —
+  // Firestore security rules are what actually protects the data, not
+  // hiding this object. See the setup notes shared alongside this file.
+  const firebaseConfig = {
+    apiKey: 'AIzaSyAyE-c10qmlAxqYHNt7TykOZb4dXTD7Y4A',
+    authDomain: 'boardclicker.firebaseapp.com',
+    projectId: 'boardclicker',
+    storageBucket: 'boardclicker.firebasestorage.app',
+    messagingSenderId: '536187456517',
+    appId: '1:536187456517:web:b1c3aeb7639fe7ea1fa06c',
+  };
+
+  const isConfigured = !firebaseConfig.apiKey.startsWith('PASTE_');
+  window.isLeaderboardConfigured = () => isConfigured;
+
+  if (isConfigured) {
+    import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js').then(async ({ initializeApp }) => {
+      const {
+        getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp,
+      } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      window.submitLeaderboardScore = async (mode, name, value) => {
+        await addDoc(collection(db, 'leaderboard'), {
+          mode,
+          name,
+          value,
+          createdAt: serverTimestamp(),
+        });
+      };
+
+      window.fetchLeaderboard = async (mode, limitCount = 10) => {
+        const q = query(
+          collection(db, 'leaderboard'),
+          where('mode', '==', mode),
+          orderBy('value', 'desc'),
+          limit(limitCount)
+        );
+        const snap = await getDocs(q);
+        return snap.docs.map((d) => d.data());
+      };
+    });
+  } else {
+    window.submitLeaderboardScore = async () => {
+      throw new Error('Leaderboard not configured yet.');
+    };
+    window.fetchLeaderboard = async () => [];
+  }
+</script>
+</body>
+</html>
