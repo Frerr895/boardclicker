@@ -4,7 +4,43 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>BoardClicker</title>
+<title>BoardClicker — Letter Typing Game & Typing Speed Test</title>
+<meta name="description" content="BoardClicker is a free letter-typing game: race the clock in Timed Challenge, last as long as you can in Survival, or test your typing speed in Speed Test. Pick your difficulty, climb the leaderboard, and see how fast you really are.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://boardclicker.online/">
+
+<!-- Open Graph / social sharing -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://boardclicker.online/">
+<meta property="og:site_name" content="BoardClicker">
+<meta property="og:title" content="BoardClicker — Letter Typing Game & Typing Speed Test">
+<meta property="og:description" content="Race the clock, survive as long as you can, or set your speed record. A free letter-typing game with four difficulties and a live leaderboard.">
+<meta property="og:image" content="https://boardclicker.online/og-image.png">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BoardClicker — Letter Typing Game & Typing Speed Test">
+<meta name="twitter:description" content="Race the clock, survive as long as you can, or set your speed record. A free letter-typing game with four difficulties and a live leaderboard.">
+<meta name="twitter:image" content="https://boardclicker.online/og-image.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "BoardClicker",
+  "url": "https://boardclicker.online/",
+  "description": "A free browser letter-typing game with Timed Challenge, Survival, and Speed Test modes across four difficulty levels, plus a global leaderboard.",
+  "genre": ["Typing game", "Arcade", "Browser game"],
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (web browser)",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -535,7 +571,7 @@
       </div>
       <div>
         <h3>Survival</h3>
-        <p>There's no difficulty to pick, so each letter is scored individually by how fast the pace was when you typed it. The mathematical operation for the score of each letter is 2000/the current pace, and in the end all the individual letter scores are added together.</p>
+        <p>There's no difficulty to pick, so each letter is scored individually by how fast the pace was when you typed it. The mathematical operation for the score of each letter is 2000/the actual pace, and in the end all the individual letter scores are added together.</p>
       </div>
       <div>
         <h3>Speed Test</h3>
@@ -562,7 +598,7 @@
 
   <section class="screen" id="screen-signup">
     <h2>Create your account</h2>
-    <p class="subtitle">Pick a username \u2014 it's how you'll show up on the leaderboard.</p>
+    <p class="subtitle">Pick a username — it's how you'll show up on the leaderboard.</p>
     <div class="menu-stack">
       <input type="text" id="signup-username" class="lb-input" placeholder="Username" maxlength="20" autocomplete="username">
       <input type="email" id="signup-email" class="lb-input" placeholder="Email" autocomplete="email">
@@ -1157,8 +1193,8 @@ loadSurvivalBest();
    in sync by an 'authchange' event dispatched from the Firebase module
    script below, since auth actually lives over there (this classic
    script never touches Firebase directly). The username shown here is
-   always the one reserved at sign-up \u2014 never something typed freely
-   into a form \u2014 which is what actually prevents impersonation on the
+   always the one reserved at sign-up — never something typed freely
+   into a form — which is what actually prevents impersonation on the
    leaderboard. */
 let currentUser = null; // { uid, username, email } | null
 let authBackTarget = 'screen-cover';
@@ -1214,7 +1250,7 @@ document.getElementById('btn-login-submit').addEventListener('click', async () =
   const status = document.getElementById('login-status');
   if (!email || !password) { status.textContent = 'Enter your email and password.'; return; }
   btn.disabled = true;
-  status.textContent = 'Signing in\u2026';
+  status.textContent = 'Signing in…';
   try {
     await window.authSignIn(email, password);
     status.textContent = '';
@@ -1235,7 +1271,7 @@ document.getElementById('btn-signup-submit').addEventListener('click', async () 
   const btn = document.getElementById('btn-signup-submit');
   const status = document.getElementById('signup-status');
   if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-    status.textContent = 'Usernames are 3\u201320 characters: letters, numbers, or _.';
+    status.textContent = 'Usernames are 3–20 characters: letters, numbers, or _.';
     return;
   }
   if (!email || password.length < 6) {
@@ -1243,7 +1279,7 @@ document.getElementById('btn-signup-submit').addEventListener('click', async () 
     return;
   }
   btn.disabled = true;
-  status.textContent = 'Creating your account\u2026';
+  status.textContent = 'Creating your account…';
   try {
     await window.authSignUp(username, email, password);
     status.textContent = '';
@@ -1266,8 +1302,8 @@ function friendlyAuthError(err) {
     case 'auth/user-not-found':
     case 'auth/wrong-password':
     case 'auth/invalid-credential': return 'Wrong email or password.';
-    case 'auth/too-many-requests': return 'Too many attempts \u2014 try again in a bit.';
-    default: return (err && err.message) || 'Something went wrong \u2014 try again.';
+    case 'auth/too-many-requests': return 'Too many attempts — try again in a bit.';
+    default: return (err && err.message) || 'Something went wrong — try again.';
   }
 }
 
@@ -1302,16 +1338,16 @@ document.querySelectorAll('.lb-tab').forEach((tab) => {
 
 async function loadLeaderboardTab(mode) {
   const listEl = document.getElementById('lb-list');
-  listEl.innerHTML = '<p class="hud-detail">Loading\u2026</p>';
+  listEl.innerHTML = '<p class="hud-detail">Loading…</p>';
 
   if (!window.isLeaderboardConfigured || !window.isLeaderboardConfigured()) {
-    listEl.innerHTML = '<p class="hud-detail">The leaderboard isn\u2019t connected yet.</p>';
+    listEl.innerHTML = '<p class="hud-detail">The leaderboard isn’t connected yet.</p>';
     return;
   }
   try {
     const entries = await window.fetchLeaderboard(mode, 10);
     if (!entries.length) {
-      listEl.innerHTML = '<p class="hud-detail">No scores yet \u2014 be the first!</p>';
+      listEl.innerHTML = '<p class="hud-detail">No scores yet — be the first!</p>';
     } else {
       listEl.innerHTML = '';
       entries.forEach((entry, i) => {
@@ -1338,7 +1374,7 @@ async function loadLeaderboardTab(mode) {
     }
   } catch (err) {
     console.error('Leaderboard fetch failed:', err);
-    listEl.innerHTML = '<p class="hud-detail">Couldn\u2019t load the leaderboard right now.</p>';
+    listEl.innerHTML = '<p class="hud-detail">Couldn’t load the leaderboard right now.</p>';
   }
 }
 
@@ -1438,7 +1474,7 @@ function fillReadySummary() {
   } else {
     rows.push(['Mode', 'Speed Test']);
     rows.push(['Letters', `${selection.speedrunLength}, full alphabet`]);
-    rows.push(['Goal', 'Type them as fast as you can — wrong keys don\u2019t cost you']);
+    rows.push(['Goal', 'Type them as fast as you can — wrong keys don’t cost you']);
   }
   rows.forEach(([label, value]) => {
     const row = document.createElement('div');
@@ -1557,7 +1593,7 @@ function updateSpeedrunProgress(correctCount, totalLetters, streak, pace) {
   progressFill.style.width = `${Math.min(100, (correctCount / totalLetters) * 100)}%`;
   hudTimer.textContent = `${correctCount}/${totalLetters}`;
   hudStreak.textContent = String(streak);
-  hudPace.textContent = pace ? `${pace}/min` : '\u2013';
+  hudPace.textContent = pace ? `${pace}/min` : '–';
 }
 
 function showResult({ title, stats, submission }) {
@@ -1599,7 +1635,7 @@ function refreshResultAuthUI() {
     const submitBtn = document.getElementById('btn-submit-score');
     const status = document.getElementById('lb-submit-status');
     if (!window.isLeaderboardConfigured || !window.isLeaderboardConfigured()) {
-      status.textContent = 'The leaderboard isn\u2019t connected yet.';
+      status.textContent = 'The leaderboard isn’t connected yet.';
       submitBtn.disabled = true;
     } else {
       submitBtn.disabled = false;
@@ -1615,13 +1651,13 @@ document.getElementById('btn-submit-score').addEventListener('click', async () =
   const btn = document.getElementById('btn-submit-score');
   const status = document.getElementById('lb-submit-status');
   btn.disabled = true;
-  status.textContent = 'Submitting\u2026';
+  status.textContent = 'Submitting…';
   try {
     await window.submitLeaderboardScore(pendingSubmission.mode, pendingSubmission.value);
     status.textContent = 'Submitted!';
   } catch (err) {
     console.error('Leaderboard submit failed:', err);
-    status.textContent = 'Couldn\u2019t submit \u2014 try again later.';
+    status.textContent = 'Couldn’t submit — try again later.';
     btn.disabled = false;
   }
 });
@@ -1717,7 +1753,7 @@ function startGame() {
     hudTimerLabel.textContent = 'Progress';
     hudSubstats.style.display = 'flex';
     hudStreak.textContent = '0';
-    hudPace.textContent = '\u2013';
+    hudPace.textContent = '–';
 
     currentSession = new SpeedrunSession({
       totalLetters: selection.speedrunLength,
@@ -1787,7 +1823,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key.length !== 1) return;
   const key = e.key.toLowerCase();
   pressedKeys.add(key);
-  if (pressedKeys.size > 1) return; // another key is already held \u2014 ignore this chorded press
+  if (pressedKeys.size > 1) return; // another key is already held — ignore this chorded press
   forwardKey(key);
 });
 
@@ -1938,7 +1974,7 @@ document.getElementById('screen-game').addEventListener('click', focusMobileInpu
           // check and now (or a Firestore write failed) — don't leave a
           // half-finished account behind for them to collide with later.
           await deleteUser(cred.user).catch(() => {});
-          throw new Error('That username was just taken \u2014 try another.');
+          throw new Error('That username was just taken — try another.');
         }
       };
 
@@ -1962,8 +1998,8 @@ document.getElementById('screen-game').addEventListener('click', focusMobileInpu
     };
     window.fetchLeaderboard = async () => [];
     window.fetchPlayerRank = async () => null;
-    window.authSignUp = async () => { throw new Error('Accounts aren\u2019t configured yet.'); };
-    window.authSignIn = async () => { throw new Error('Accounts aren\u2019t configured yet.'); };
+    window.authSignUp = async () => { throw new Error('Accounts aren’t configured yet.'); };
+    window.authSignIn = async () => { throw new Error('Accounts aren’t configured yet.'); };
     window.authSignOut = async () => {};
   }
 </script>
